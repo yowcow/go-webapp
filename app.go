@@ -2,19 +2,27 @@ package main
 
 import (
 	"flag"
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-gonic/gin"
 	"github.com/yowcow/go-webapp/action"
-	"gopkg.in/gin-gonic/gin.v1"
 )
-
-func Build(app *gin.Engine) {
-	app.GET("/", action.HandleRoot)
-	app.POST("/json", action.HandleJsonBody)
-	app.POST("/form", action.HandleFormBody)
-}
 
 var (
 	port string
 )
+
+func Build(router *gin.Engine) {
+	store := sessions.NewCookieStore([]byte("hogefuga"))
+	router.Use(sessions.Sessions("mysession", store))
+
+	router.GET("/", action.HandleRoot)
+	router.POST("/session", action.HandleSetSession)
+	router.GET("/session", action.HandleGetSession)
+	router.POST("/json", action.HandleJsonBody)
+	router.POST("/form", action.HandleFormBody)
+	router.POST("/login", action.HandleLogin)
+
+}
 
 func main() {
 	flag.StringVar(&port, "port", "8888", "Port to listen to")

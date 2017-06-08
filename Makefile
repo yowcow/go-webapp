@@ -1,20 +1,22 @@
-.PHONY: all test
+.PHONY: all build test
 
 BINARY = go-webapp
 
-all: Godeps $(BINARY)
+all: Godeps build
 
 Godeps:
 	godep save
 
-test:
-	GIN_MODE=release go test -v
+build: $(BINARY)
 
 $(BINARY):
 	go build -o $@
 
+test:
+	GIN_MODE=release go test -v
+
 run:
-	./$(BINARY)
+	go run app.go
 
 clean:
 	rm -rf $(BINARY)

@@ -1,7 +1,8 @@
 package action
 
 import (
-	"gopkg.in/gin-gonic/gin.v1"
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-gonic/gin"
 	"net/http"
 	"strconv"
 )
@@ -27,4 +28,22 @@ func HandleJsonBody(c *gin.Context) {
 func HandleFormBody(c *gin.Context) {
 	ver, _ := strconv.Atoi(c.PostForm("version"))
 	c.JSON(http.StatusOK, gin.H{"version": ver})
+}
+
+func HandleSetSession(c *gin.Context) {
+	store := sessions.Default(c)
+	val := c.PostForm("val")
+	store.Set("val", val)
+	store.Save()
+	c.JSON(http.StatusOK, gin.H{"success": true})
+}
+
+func HandleGetSession(c *gin.Context) {
+	store := sessions.Default(c)
+	val := store.Get("val")
+	if val == nil {
+		c.String(http.StatusNoContent, "")
+	} else {
+		c.String(http.StatusOK, val.(string))
+	}
 }
