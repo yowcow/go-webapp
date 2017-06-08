@@ -1,9 +1,7 @@
 package action
 
 import (
-	"encoding/json"
 	"gopkg.in/gin-gonic/gin.v1"
-	"io/ioutil"
 	"net/http"
 	"strconv"
 )
@@ -18,10 +16,12 @@ func HandleRoot(c *gin.Context) {
 }
 
 func HandleJsonBody(c *gin.Context) {
-	jsonb, _ := ioutil.ReadAll(c.Request.Body)
-	data := gin.H{}
-	json.Unmarshal(jsonb, &data)
-	c.JSON(http.StatusOK, gin.H{"version": data["version"]})
+	data := struct {
+		Ver int `json:"version"`
+	}{}
+	if c.BindJSON(&data) == nil {
+		c.JSON(http.StatusOK, gin.H{"version": data.Ver})
+	}
 }
 
 func HandleFormBody(c *gin.Context) {
