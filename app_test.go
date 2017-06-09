@@ -5,25 +5,38 @@ import (
 	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"testing"
 )
 
+func request(method, url string, body io.Reader) (*httptest.ResponseRecorder, *http.Request) {
+	req := httptest.NewRequest(method, url, body)
+	w := httptest.NewRecorder()
+	return w, req
+}
+
+func build(middlewares ...func(*gin.Context)) *gin.Engine {
+	routing := gin.New()
+	for _, f := range middlewares {
+		routing.Use(f)
+	}
+	Build(routing)
+	return routing
+}
+
 func TestRoot(t *testing.T) {
 	assert := assert.New(t)
 
-	req := httptest.NewRequest("GET", "/", nil)
-	req.Header.Add("User-Agent", "MyBrowser/1")
-	w := httptest.NewRecorder()
+	w, req := request("GET", "/", nil)
+	req.Header.Add("user-Agent", "MyBrowser/1")
 
-	r := gin.New()
-	r.Use(func(c *gin.Context) {
-		c.Next()
+	r := build(func(c *gin.Context) {
 		c.Header("X-Middleware", "hoge")
+		c.Next()
 	})
-	Build(r)
 	r.ServeHTTP(w, req)
 
 	respdata := map[string]interface{}{}
@@ -44,12 +57,10 @@ func TestJsonBody(t *testing.T) {
 	})
 	reqbody := bytes.NewBuffer(jsonb)
 
-	req := httptest.NewRequest("POST", "/json", reqbody)
+	w, req := request("POST", "/json", reqbody)
 	req.Header.Add("content-type", "application/json")
-	w := httptest.NewRecorder()
 
-	r := gin.New()
-	Build(r)
+	r := build()
 	r.ServeHTTP(w, req)
 
 	respdata := struct {
@@ -68,12 +79,10 @@ func TestFormBody(t *testing.T) {
 	q.Set("version", "2345")
 	reqbody := bytes.NewBufferString(q.Encode())
 
-	req := httptest.NewRequest("POST", "/form", reqbody)
+	w, req := request("POST", "/form", reqbody)
 	req.Header.Add("content-type", "application/x-www-form-urlencoded")
-	w := httptest.NewRecorder()
 
-	r := gin.New()
-	Build(r)
+	r := build()
 	r.ServeHTTP(w, req)
 
 	respdata := struct {
@@ -93,12 +102,10 @@ func TestLoginFails(t *testing.T) {
 	}{111, "hogefuga"})
 	reqbody := bytes.NewBuffer(jsonb)
 
-	req := httptest.NewRequest("POST", "/login", reqbody)
+	w, req := request("POST", "/login", reqbody)
 	req.Header.Add("content-type", "application/json")
-	w := httptest.NewRecorder()
 
-	r := gin.New()
-	Build(r)
+	r := build()
 	r.ServeHTTP(w, req)
 
 	respdata := struct {
@@ -120,12 +127,10 @@ func TestLoginSucceeds(t *testing.T) {
 		}
 	`))
 
-	req := httptest.NewRequest("POST", "/login", reqbody)
+	w, req := request("POST", "/login", reqbody)
 	req.Header.Add("content-type", "application/json")
-	w := httptest.NewRecorder()
 
-	r := gin.New()
-	Build(r)
+	r := build()
 	r.ServeHTTP(w, req)
 
 	respdata := struct {
@@ -144,12 +149,10 @@ func TestSetSession(t *testing.T) {
 	q.Set("val", "hogefuga")
 	reqbody := bytes.NewBufferString(q.Encode())
 
-	req := httptest.NewRequest("POST", "/session", reqbody)
+	w, req := request("POST", "/session", reqbody)
 	req.Header.Add("content-type", "application/x-www-form-urlencoded")
-	w := httptest.NewRecorder()
 
-	r := gin.New()
-	Build(r)
+	r := build()
 	r.ServeHTTP(w, req)
 
 	respdata := struct {
@@ -165,12 +168,10 @@ func TestSetSession(t *testing.T) {
 func TestGetSession(t *testing.T) {
 	assert := assert.New(t)
 
-	req := httptest.NewRequest("GET", "/session", nil)
+	w, req := request("GET", "/session", nil)
 	req.Header.Add("cookie", "mysession=MTQ5NjkyMzY3OHxEdi1CQkFFQ180SUFBUkFCRUFBQUpmLUNBQUVHYzNSeWFXNW5EQVVBQTNaaGJBWnpkSEpwYm1jTUNnQUlhRzluWldaMVoyRT18K3KFPKR05z2Ke6soM4rkr9KDHo0TwLUU9RQS7wRIJ0o=;")
-	w := httptest.NewRecorder()
 
-	r := gin.New()
-	Build(r)
+	r := build()
 	r.ServeHTTP(w, req)
 
 	assert.Equal(http.StatusOK, w.Code)
