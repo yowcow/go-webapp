@@ -27,6 +27,17 @@ func build(middlewares ...func(*gin.Context)) *gin.Engine {
 	return routing
 }
 
+func TestStatic(t *testing.T) {
+	assert := assert.New(t)
+
+	w, req := request("GET", "/static/hello.html", nil)
+
+	r := build()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(http.StatusOK, w.Code)
+}
+
 func TestRoot(t *testing.T) {
 	assert := assert.New(t)
 

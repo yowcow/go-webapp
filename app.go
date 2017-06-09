@@ -12,6 +12,8 @@ var (
 )
 
 func Build(router *gin.Engine) {
+	router.Static("/static", "./static")
+
 	store := sessions.NewCookieStore([]byte("hogefuga"))
 	router.Use(sessions.Sessions("mysession", store))
 
@@ -21,7 +23,6 @@ func Build(router *gin.Engine) {
 	router.POST("/json", action.HandleJsonBody)
 	router.POST("/form", action.HandleFormBody)
 	router.POST("/login", action.HandleLogin)
-
 }
 
 func main() {
