@@ -6,9 +6,11 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"io"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
 	"testing"
 )
 
@@ -102,6 +104,38 @@ func TestFormBody(t *testing.T) {
 	json.Unmarshal(w.Body.Bytes(), &respdata)
 
 	assert.Equal(2345, respdata.Ver)
+}
+
+func TestMultipartFormBody(t *testing.T) {
+	assert := assert.New(t)
+
+	reqbody := &bytes.Buffer{}
+	bufwriter := multipart.NewWriter(reqbody)
+
+	fr, _ := os.Open("./static/hello.html")
+	fw, _ := bufwriter.CreateFormFile("myupload", "hello.html")
+	io.Copy(fw, fr)
+
+	fw, _ = bufwriter.CreateFormField("hello")
+	fw.Write([]byte("こんにちは"))
+
+	bufwriter.Close()
+
+	w, req := request("POST", "/form-multipart", reqbody)
+	req.Header.Add("content-type", bufwriter.FormDataContentType())
+
+	r := build()
+	r.ServeHTTP(w, req)
+
+	respdata := struct {
+		Filename string `json:"filename"`
+		Hello    string `json:"hello"`
+	}{}
+	json.Unmarshal(w.Body.Bytes(), &respdata)
+
+	assert.Equal(http.StatusOK, w.Code)
+	assert.Equal("hello.html", respdata.Filename)
+	assert.Equal("こんにちは", respdata.Hello)
 }
 
 func TestLoginFails(t *testing.T) {

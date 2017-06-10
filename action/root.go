@@ -30,6 +30,16 @@ func HandleFormBody(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"version": ver})
 }
 
+func HandleMultipartFormBody(c *gin.Context) {
+	_, header, _ := c.Request.FormFile("myupload")
+	// Do `io.Copy(os.Stdout, file)` to copy content to somewhere
+	hello := c.PostForm("hello")
+	c.JSON(http.StatusOK, gin.H{
+		"filename": header.Filename,
+		"hello":    hello,
+	})
+}
+
 func HandleSetSession(c *gin.Context) {
 	store := sessions.Default(c)
 	val := c.PostForm("val")

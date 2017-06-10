@@ -22,6 +22,7 @@ func Build(router *gin.Engine) {
 	router.GET("/session", action.HandleGetSession)
 	router.POST("/json", action.HandleJsonBody)
 	router.POST("/form", action.HandleFormBody)
+	router.POST("/form-multipart", action.HandleMultipartFormBody)
 	router.POST("/login", action.HandleLogin)
 }
 
