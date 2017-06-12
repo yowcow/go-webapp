@@ -6,7 +6,7 @@ go:
 
 before_script:
   - go get github.com/tools/godep
-  - godep restore
+  - godep restore -v
 
 script:
   - make test
