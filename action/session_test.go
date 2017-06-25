@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"net/http/httptest"
 	"net/url"
-	"regexp"
 	"testing"
 
 	"github.com/gin-contrib/sessions"
@@ -35,20 +34,24 @@ func TestHandleSetSession(t *testing.T) {
 	router.POST("/", HandleSetSession)
 	router.ServeHTTP(w, req)
 
-	assert.Equal(200, w.Code)
+	resp := w.Result()
 
-	res := &struct {
+	assert.Equal(200, resp.StatusCode)
+
+	resbody := &struct {
 		Success bool `json:"success"`
 	}{}
-	decoder := json.NewDecoder(w.Body)
+	decoder := json.NewDecoder(resp.Body)
 
-	assert.Nil(decoder.Decode(res))
-	assert.True(res.Success)
+	assert.Nil(decoder.Decode(resbody))
+	assert.True(resbody.Success)
 
-	re := regexp.MustCompile("^mysession=(?:[a-zA-Z0-9\\-\\_]+)=;.+")
-	cookie := w.Header().Get("set-cookie")
+	cookies := resp.Cookies()
 
-	assert.True(re.MatchString(cookie))
+	assert.Equal(1, len(cookies))
+
+	assert.Equal("mysession", cookies[0].Name)
+	assert.True(len(cookies[0].Value) > 0)
 }
 
 func TestHandleGetSession(t *testing.T) {
@@ -62,6 +65,8 @@ func TestHandleGetSession(t *testing.T) {
 	router.GET("/", HandleGetSession)
 	router.ServeHTTP(w, req)
 
-	assert.Equal(200, w.Code)
-	assert.Equal("hogehoge", w.Body.String())
+	resp := w.Result()
+
+	assert.Equal(200, resp.StatusCode)
+	assert.Equal("hogehoge", resp.Body.String())
 }
