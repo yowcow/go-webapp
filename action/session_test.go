@@ -3,6 +3,7 @@ package action
 import (
 	"bytes"
 	"encoding/json"
+	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"testing"
@@ -18,6 +19,8 @@ func build() *gin.Engine {
 	router.Use(sessions.Sessions("mysession", store))
 	return router
 }
+
+var cookies []*http.Cookie
 
 func TestHandleSetSession(t *testing.T) {
 	assert := assert.New(t)
@@ -46,7 +49,7 @@ func TestHandleSetSession(t *testing.T) {
 	assert.Nil(decoder.Decode(resbody))
 	assert.True(resbody.Success)
 
-	cookies := resp.Cookies()
+	cookies = resp.Cookies()
 
 	assert.Equal(1, len(cookies))
 
@@ -59,14 +62,15 @@ func TestHandleGetSession(t *testing.T) {
 
 	w := httptest.NewRecorder()
 	req := httptest.NewRequest("GET", "/", nil)
-	req.Header.Add("cookie", "mysession=MTQ5ODEzMjQyMXxEdi1CQkFFQ180SUFBUkFCRUFBQUpmLUNBQUVHYzNSeWFXNW5EQVVBQTNaaGJBWnpkSEpwYm1jTUNnQUlhRzluWldodloyVT18Zyaa5yY0NjGCd7jWkXWLT5wMJTFkaCetheXQOyQdxuU=;")
+
+	for _, c := range cookies {
+		req.AddCookie(c)
+	}
 
 	router := build()
 	router.GET("/", HandleGetSession)
 	router.ServeHTTP(w, req)
 
-	resp := w.Result()
-
-	assert.Equal(200, resp.StatusCode)
-	assert.Equal("hogehoge", resp.Body.String())
+	assert.Equal(200, w.Code)
+	assert.Equal("hogehoge", w.Body.String())
 }
